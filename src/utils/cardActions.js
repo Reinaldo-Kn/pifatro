@@ -344,8 +344,17 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
     handleGameOver() {
         console.log("GAME OVER! Sem mais descartes.");
 
-        // Desabilita todas as interações da cena para parar o jogo
-        this.scene.input.enabled = false; 
+        // Desabilita interações relacionadas a cartas (evita arrastar)
+        try {
+            if (this.scene.handManager && Array.isArray(this.scene.handManager.handSprites)) {
+                this.scene.handManager.handSprites.forEach(s => {
+                    try { s.disableInteractive(); } catch (e) { /* ignore */ }
+                });
+            }
+        } catch (e) { /* ignore */ }
+
+        // Garante cursor padrão para permitir clicar em botões de UI
+        try { this.scene.input.setDefaultCursor('default'); } catch (e) { /* ignore */ }
 
         // Cria uma tela de Fim de Jogo (exemplo simples)
         const centerX = this.scene.scale.width / 2;
@@ -354,11 +363,46 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
         this.scene.add.rectangle(centerX, centerY, 600, 300, 0x000000, 0.7)
             .setDepth(200);
 
-        this.scene.add.text(centerX, centerY, 'FIM DE JOGO\nSem mais Vidas', { 
+        const msg = this.scene.add.text(centerX, centerY - 36, 'FIM DE JOGO', { 
             fontSize: '48px', 
             fill: '#FF0000', 
             align: 'center' 
         }).setOrigin(0.5).setDepth(201);
+
+        const sub = this.scene.add.text(centerX, centerY + 8, 'Sem mais Vidas', {
+            fontSize: '28px',
+            fill: '#FFFFFF',
+            align: 'center'
+        }).setOrigin(0.5).setDepth(201);
+
+        // New Game button
+        const btn = this.scene.add.text(centerX, centerY + 80, 'Novo Jogo', {
+            fontSize: '24px',
+            backgroundColor: '#28a745',
+            padding: { x: 12, y: 8 },
+            color: '#ffffff',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5).setDepth(202).setInteractive({ cursor: 'pointer' });
+
+        btn.on('pointerdown', () => {
+            // Optional small feedback
+            this.scene.tweens.add({ targets: btn, scale: 0.95, duration: 80, yoyo: true });
+            try {
+                // Reset shared gameState values so restart begins with full life/zero coins
+                try {
+                    if (this.gameState) {
+                        this.gameState.currentLives = 3;
+                        this.gameState.currentCoins = 0;
+                        this.gameState.currentDrawnCard = null;
+                    }
+                } catch (e) { /* ignore */ }
+
+                // Restart the scene to reset decks/hands/UI
+                this.scene.scene.restart();
+            } catch (e) {
+                console.error('Failed to restart scene for new game', e);
+            }
+        });
     }
 
 

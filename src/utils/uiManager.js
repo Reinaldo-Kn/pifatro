@@ -127,11 +127,95 @@ export class UIManager {
   createLifeBar(initialLives) {
     const x = this.scene.scale.width / 2;
     const y = 80; 
-
-    const lifeSprite = this.scene.add.image(x, y, `heart_${initialLives}`)
+    // clamp initialLives between 0 and 3 to avoid missing texture keys
+    const clamped = Math.max(0, Math.min(3, Number(initialLives) || 0));
+    const lifeSprite = this.scene.add.image(x, y, `heart_${clamped}`)
       .setScale(0.8) 
       .setDepth(10); 
-      
+
     return lifeSprite;
+  }
+
+  // ============================================================
+  // CRIA BOTAO DE SAVE (canto superior direito)
+  // onClick: função chamada quando clicar no botão
+  // ============================================================
+  createSaveButton(onClick) {
+    const padding = 16;
+    const btnSize = 44;
+    const x = this.scene.scale.width - padding - btnSize / 2;
+    const y = padding + btnSize / 2;
+
+    // background circle
+    const bg = this.scene.add.circle(x, y, btnSize / 2, 0x222222, 0.9).setDepth(20);
+
+    // icon text (using floppy disk emoji as icon fallback)
+    const icon = this.scene.add.text(x, y, '💾', { fontSize: '20px' }).setOrigin(0.5).setDepth(21);
+
+    const container = this.scene.add.container(0, 0, [bg, icon]).setSize(btnSize, btnSize).setDepth(20);
+
+    // make the background circle interactive (avoid referencing Phaser global in module scope)
+    bg.setInteractive({ cursor: 'pointer' });
+    bg.on('pointerdown', () => {
+      // small press animation
+      this.scene.tweens.add({ targets: [bg, icon], scale: 0.92, duration: 80, yoyo: true });
+      if (onClick) onClick();
+    });
+
+    // store reference in case we need to update position on resize
+    this.saveButton = container;
+    return container;
+  }
+
+  // ============================================================
+  // EXIBE UMA MENSAGEM DE FEEDBACK DE SALVAMENTO
+  // ============================================================
+  showSaveFeedback(message = 'Saved', success = true, duration = 1400) {
+    const x = this.scene.scale.width - 120;
+    const y = 72;
+
+    const color = success ? '#7CFC00' : '#FF6347';
+
+    if (this._saveFeedbackText) this._saveFeedbackText.destroy();
+
+    this._saveFeedbackText = this.scene.add.text(x, y, message, {
+      fontSize: '18px',
+      fontFamily: 'Arial',
+      fill: color,
+      stroke: '#000000',
+      strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(30);
+
+    this._saveFeedbackText.alpha = 0;
+    this.scene.tweens.add({ targets: this._saveFeedbackText, alpha: 1, duration: 180 });
+    this.scene.time.delayedCall(duration, () => {
+      this.scene.tweens.add({ targets: this._saveFeedbackText, alpha: 0, duration: 300, onComplete: () => { this._saveFeedbackText.destroy(); this._saveFeedbackText = null; } });
+    });
+  }
+
+  // ============================================================
+  // EXIBE UM PAINEL DE DEBUG (texto longo) ÚTIL PARA ERROS DE REDE
+  // ============================================================
+  showDebugPanel(text) {
+    // limpa painel antigo
+    if (this._debugPanel) this._debugPanel.destroy();
+
+    const w = Math.min(760, this.scene.scale.width - 40);
+    const h = Math.min(320, this.scene.scale.height / 3);
+    const x = this.scene.scale.width / 2 - w / 2;
+    const y = this.scene.scale.height - h - 20;
+
+    const bg = this.scene.add.rectangle(x + w/2, y + h/2, w, h, 0x000000, 0.85).setDepth(1000);
+    const txt = this.scene.add.text(x + 12, y + 12, text, { fontSize: '12px', fontFamily: 'monospace', color: '#ddd', wordWrap: { width: w - 24 } }).setDepth(1001);
+
+    const close = this.scene.add.text(x + w - 18, y + 8, '×', { fontSize: '20px', color: '#fff' }).setDepth(1002).setInteractive({ cursor: 'pointer' });
+    close.on('pointerdown', () => {
+      if (this._debugPanel) {
+        this._debugPanel.forEach(o => o.destroy());
+        this._debugPanel = null;
+      }
+    });
+
+    this._debugPanel = [bg, txt, close];
   }
 }
