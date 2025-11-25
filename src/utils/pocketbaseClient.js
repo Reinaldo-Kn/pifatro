@@ -2,7 +2,7 @@ import PocketBase from 'pocketbase';
 
 let pb = null;
 
-export function initPocketBase(url = 'http://127.0.0.1:8090') {
+export function initPocketBase(url = '/') {
   pb = new PocketBase(url);
   return pb;
 }
