@@ -3,9 +3,7 @@
 export const SUITS = ["S", "H", "C", "D"];
 export const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
-// -----------------------------
-//   MAPA PARA NOME DOS ASSETS
-// -----------------------------
+
 
 const SUIT_TO_NAME = {
   S: "spades",
@@ -30,9 +28,6 @@ const RANK_TO_NAME = {
   "10": "10",
 };
 
-// ----------------------------------------------
-//   1) LOAD DOS ASSETS (para usar no preload())
-// ----------------------------------------------
 
 export function loadCards(scene) {
   // Faces das cartas
@@ -43,7 +38,6 @@ export function loadCards(scene) {
     }
   }
 
-  // Jokers (se quiser)
   scene.load.image("joker", `/card_pngs/card_faces/joker.png`);
 
   // Backs
@@ -52,9 +46,6 @@ export function loadCards(scene) {
   scene.load.image("card_back_3", `/card_pngs/card_backs/card_back_3.png`);
 }
 
-// ----------------------------------------------
-//   2) FUNÇÃO PARA GERAR NOME EXATO DO ASSET
-// ----------------------------------------------
 
 export function cardAssetName(rank, suit) {
   const r = RANK_TO_NAME[rank];
@@ -62,9 +53,6 @@ export function cardAssetName(rank, suit) {
   return `${r}_of_${s}`;
 }
 
-// ----------------------------------------------
-//   3) CRIA O BARALHO 52
-// ----------------------------------------------
 
 export function createDeck() {
   const deck = [];
@@ -83,9 +71,6 @@ export function createDeck() {
   return deck;
 }
 
-// ----------------------------------------------
-//   4) EMBARALHAMENTO (Fisher-Yates real)
-// ----------------------------------------------
 
 export function shuffle(deck) {
   for (let i = deck.length - 1; i > 0; i--) {
@@ -95,9 +80,7 @@ export function shuffle(deck) {
   return deck;
 }
 
-// ----------------------------------------------
-//   5) COMPRAR UMA CARTA
-// ----------------------------------------------
+
 
 export function draw(deck) {
   return deck.pop(); // remove e retorna a última carta

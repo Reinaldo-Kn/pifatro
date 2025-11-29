@@ -53,11 +53,10 @@ export function checkPifeCombination(selectedCards) {
     const uniqueSuits = new Set(suits).size;
     const isSameSuit = uniqueSuits === 1;
 
-    // 1. Checa Trinca (3 cartas de mesmo valor)
+    //  Checa Trinca 
     const isTrinca = new Set(ranks).size === 1;
 
     if (isTrinca) {
-        // Coração volta uma etapa (+1 vida) e 50 moedas
         return { type: 'Trinca', livesRestored: 1, coins: 50 };
     }
 
@@ -66,17 +65,14 @@ export function checkPifeCombination(selectedCards) {
         .map(r => RANKS.indexOf(r))
         .sort((a, b) => a - b);
     
-    // Verifica se os índices são consecutivos
     const isConsecutive = rankIndices[1] === rankIndices[0] + 1 && 
                           rankIndices[2] === rankIndices[1] + 1;
 
     if (isConsecutive) {
-        // 3. Checa Sequência + Mesmo Naipe (Sequência Colorida / Straight Flush)
+        // Checa Sequência + Mesmo Naipe
         if (isSameSuit) {
-            // Coração volta DUAS etapas (+2 vidas) e 200 moedas
             return { type: 'SequenciaColorida', livesRestored: 2, coins: 200 };
         } else {
-            // Coração volta UMA etapa (+1 vida) e 100 moedas
             return { type: 'Sequencia', livesRestored: 1, coins: 100 };
         }
     }

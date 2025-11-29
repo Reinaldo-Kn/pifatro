@@ -2,23 +2,34 @@ version: '3.8'
 
 services:
   pocketbase:
-    image: adrianmusante/pocketbase:0.34
+    image: elestio/pocketbase:v0.34.0
     container_name: pifatro_pocketbase
     restart: unless-stopped
     ports:
       - "8090:8090"
     volumes:
-      - ./pocketbase_data:/pb_data
-      - ./public/pocketbase:/backup:ro
+      - pifatro_data:/pb_data
 
   web:
-    image: nginx:1.29.3-alpine
+    image: reinaldokn/pifatro-frontend:latest
     container_name: pifatro_web
     restart: unless-stopped
     ports:
       - "8080:80"
-    volumes:
-      - ./dist:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - pocketbase
+
+  portainer:
+    image: portainer/portainer-ce:lts
+    container_name: portainer
+    restart: always
+    ports:
+      - "8000:8000"
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
+volumes:
+  pifatro_data:
+  portainer_data:

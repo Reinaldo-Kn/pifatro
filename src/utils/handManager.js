@@ -62,7 +62,6 @@ export class HandManager {
         sprite.on("dragstart", (pointer) => {
             if (this.scene.gameState.currentDrawnCard) return;
 
-            // Se começou a arrastar, limpa qualquer seleção visual pendente
             this.selectedSprites.forEach(s => {
                 s.setTint(0xFFFFFF);
                 this.scene.tweens.add({ targets: s, y: this.handY, duration: 150 });
@@ -212,20 +211,17 @@ export class HandManager {
 
 enablePifeSelection(playerHand) {
         this.handSprites.forEach((sprite, index) => {
-            // Remove listeners antigos para limpar a memória e evitar conflitos
             sprite.removeAllListeners("pointerdown");
             sprite.removeAllListeners("pointerover");
             sprite.removeAllListeners("pointerout");
             
             sprite.setInteractive({ cursor: "pointer" });
 
-            // --- 1. EVENTO DE CLIQUE (SELEÇÃO) ---
             sprite.on("pointerdown", () => {
                 if (this.scene.gameState.currentDrawnCard) return; // Bloqueia se estiver trocando carta
 
                 const indexInSelected = this.selectedSprites.indexOf(sprite);
                 
-                // A. Se já está selecionada -> Desseleciona
                 if (indexInSelected > -1) {
                     this.selectedSprites.splice(indexInSelected, 1);
                     
@@ -242,14 +238,13 @@ enablePifeSelection(playerHand) {
                         
                         this.scene.tweens.add({ 
                             targets: sprite, 
-                            y: this.handY - 30, // Sobe
+                            y: this.handY - 30, 
                             duration: 150 
                         });
-                        sprite.setTint(0xDDDDDD); // Leve destaque visual
+                        sprite.setTint(0xDDDDDD); 
                     }
                 }
 
-                // C. Checa se completou 3 cartas para Pife
                 if (this.selectedSprites.length === 3) {
                     const selectedCardData = this.selectedSprites.map(s => {
                         const originalIndex = this.handSprites.indexOf(s);
@@ -258,7 +253,6 @@ enablePifeSelection(playerHand) {
 
                     this.scene.cardActions.checkAndApplyPife(selectedCardData, this.selectedSprites);
 
-                    // Se não consumiu as cartas (falha no pife), limpa a seleção visual
                     if (this.selectedSprites.length === 3) { 
                         this.selectedSprites.forEach(s => {
                             if(s.scene) {
@@ -274,17 +268,15 @@ enablePifeSelection(playerHand) {
             sprite.on("pointerover", () => {
                 this.scene.tweens.add({
                     targets: sprite,
-                    scale: this.handScale * 1.1, // Aumenta 10%
+                    scale: this.handScale * 1.1, 
                     duration: 100
                 });
                 sprite.setDepth(100); 
             });
 
             sprite.on("pointerout", () => {
-                // Verifica se esta carta específica está selecionada
                 const isSelected = this.selectedSprites.includes(sprite);
                 
-                // Se selecionada, o Y base é -30. Se não, é o Y normal.
                 const targetY = isSelected ? (this.handY - 30) : this.handY;
 
                 this.scene.tweens.add({
@@ -298,7 +290,6 @@ enablePifeSelection(playerHand) {
             });
         });
         
-        // Reativa o Drag and Drop
         this.refreshCardDragListeners(playerHand);
     }
     animateCardsEntry(newCardsCount) {
@@ -313,7 +304,7 @@ enablePifeSelection(playerHand) {
             const finalY = sprite.y;
 
             sprite.setPosition(deckX, deckY);
-            sprite.setScale(0); // Começa pequena
+            sprite.setScale(0); 
             sprite.setVisible(true);
 
             this.scene.tweens.add({

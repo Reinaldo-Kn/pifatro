@@ -9,7 +9,7 @@ export class CardActions {
         this.drawnSprite = null;
         this.gameState = scene.gameState;
         
-        // Propriedades que serão preenchidas pelo MainScene
+        // preenchidas pelo MainScene
         this.onPifeSuccess = null;
         this.onCardReplaced = null;
         this.onCoinsUpdated = null;
@@ -26,29 +26,27 @@ export class CardActions {
             }
         }
 
-    // ============================================================
-    // NOVO MÉTODO: Aplica Bônus de Combinação (PIFE)
-    // ============================================================
+
     applyPifeBonus(bonus) {
         const { livesRestored, coins } = bonus;
         const maxLives = 3;
 
-        // 1. Ganha Moedas
+        // Ganha Moedas
         this.addCoins(coins);
 
-        // 2. Restaura Vida (Limitada a maxLives)
+        //Restaura Vida (limitada a maxLives)
         let newLives = this.gameState.currentLives + livesRestored;
         newLives = Math.min(newLives, maxLives);
 
         if (newLives > this.gameState.currentLives) {
             this.gameState.currentLives = newLives;
 
-            // Atualiza a imagem do coração (a chave é o valor da vida)
+            // Atualiza a imagem do coração 
             const newLifeKey = `heart_${this.gameState.currentLives}`;
 
             if (this.scene.lifeSprite) {
                 this.scene.lifeSprite.setTexture(newLifeKey);
-                // Animação de "cura" no coração
+                // cura do coração
                 this.scene.tweens.add({
                     targets: this.scene.lifeSprite,
                     scale: 1.2,
@@ -56,18 +54,16 @@ export class CardActions {
                     yoyo: true,
                     ease: 'Bounce.easeOut',
                     onComplete: () => {
-                        this.scene.lifeSprite.setScale(0.8); // Volta para a escala original (0.8 definida no UIManager)
+                        this.scene.lifeSprite.setScale(0.8); 
                     }
                 });
             }
         }
     }
 
-    // ============================================================
-    // NOVO MÉTODO: ANIMAÇÃO DE SUCESSO PIFE (Exemplo)
-    // ============================================================
+
     animatePifeSuccess(sprites) {
-        // Animação de sucesso (as cartas sobem, giram e somem)
+        // Animação de sucesso 
         sprites.forEach((sprite) => {
             this.scene.tweens.add({
                 targets: sprite,
@@ -78,54 +74,50 @@ export class CardActions {
                 duration: 600,
                 ease: 'Sine.easeIn',
                 onComplete: () => {
-                    sprite.destroy(); // Destruir o sprite após a animação
+                    sprite.destroy(); 
                 }
             });
         });
     }
 
-    // ============================================================
-    // NOVO MÉTODO: CHECA E APLICA PIFE (Chamado pelo HandManager)
-    // ============================================================
+
 checkAndApplyPife(selectedCardsData, selectedSprites) {
         const bonus = checkPifeCombination(selectedCardsData);
 
         if (bonus) {
             console.log("PIFE VÁLIDO!", bonus);
             
-            // Desativa interação para não bugar durante a animação
+            
             this.scene.input.enabled = false;
 
-            // --- ANIMAÇÃO DE SUCESSO (PIFE) ---
             this.scene.tweens.add({
                 targets: selectedSprites,
                 y: '-=100',        // Sobe as cartas
                 scale: 1.5,        // Aumenta o tamanho
                 alpha: 0,          // Desaparece gradualmente
                 angle: 360,        // Gira
-                duration: 600,     // Duração da animação
+                duration: 600,     
                 ease: 'Back.easeIn',
                 onComplete: () => {
                     // Restaura input
                     this.scene.input.enabled = true;
 
-                    // Aplica bônus (Moedas/Vidas)
+                    // Aplica moedas e vidas
                     this.applyPifeBonus(bonus);
 
-                    // Chama o callback na MainScene para remover e comprar novas
                     if (this.onPifeSuccess) {
                         this.onPifeSuccess(selectedCardsData);
                     }
                 }
             });
             
-            // Efeito visual extra: Tint Dourado (se quiser)
+            
             selectedSprites.forEach(s => s.setTint(0xFFD700)); 
 
         } else {
             console.log("Combinação Inválida");
             
-            // Animação de erro (tremida lateral)
+            // Animação de erro 
             this.scene.tweens.add({
                 targets: selectedSprites,
                 x: '+=10',
@@ -133,21 +125,17 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
                 repeat: 3,
                 duration: 50,
                 onComplete: () => {
-                    // Retorna as cartas para posição original e remove tint
+                
                     selectedSprites.forEach(s => {
                         s.setTint(0xFFFFFF);
                         this.scene.tweens.add({ targets: s, y: s.input.hitArea.centerY ? this.scene.scale.height - 180 : s.y, duration: 200 });
                     });
                 }
             });
-            // Limpa a seleção visual no HandManager (será tratado lá se necessário, 
-            // mas o ideal é o HandManager limpar se a gente retornar false aqui, 
-            // mas como estamos lidando com animação assíncrona, deixamos o visual tratar)
+        
         }
     }
-    // ============================================================
-    // NOVO MÉTODO: Diminui a Vida e Checa Fim de Jogo
-    // ============================================================
+
     decreaseLife() {
         this.gameState.currentLives -= 1;
 
@@ -155,12 +143,12 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
         
         if (this.scene.lifeSprite) {
             
-            // 🛑 CORRIGIDO: Só atualiza a textura se a vida for >= 0.
+     
             if (this.gameState.currentLives >= 0) {
                 this.scene.lifeSprite.setTexture(newLifeKey);
             }
             
-            // Animação de dano/perda de vida no coração
+            // Animação de dano
             this.scene.tweens.add({
                 targets: this.scene.lifeSprite,
                 scale: 0.9,
@@ -168,13 +156,13 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
                 yoyo: true,
                 ease: 'Sine.easeIn',
                 onComplete: () => {
-                    // Volta para a escala original (0.8 definida no UIManager)
+                
                     this.scene.lifeSprite.setScale(0.8); 
                 }
             });
         }
 
-        // Checagem de Fim de Jogo
+    
         if (this.gameState.currentLives < 0) {
             this.handleGameOver();
             return true; // Jogo acabou
@@ -182,9 +170,7 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
         return false; // Jogo continua
     }
 
-    // ============================================================
-    // COMPRA CARTA DO DECK
-    // ============================================================
+  
     drawCard(deck, onCardDrawn) {
         if (gameState.currentDrawnCard) return;
 
@@ -211,15 +197,12 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
         if (onCardDrawn) onCardDrawn();
     }
 
-    // ============================================================
-    // SUBSTITUI CARTA NA MÃO (Com Perda de Vida)
-    // ============================================================
+
     replaceCardInHand(playerHand, index, sprite, discardSprite, handScale, onComplete) {
         if (!gameState.currentDrawnCard) return;
 
-        // 🛑 Diminui a vida ao substituir carta.
+        //  Diminui a vida ao substituir carta.
         if (this.decreaseLife()) {
-            // Se o jogo acabou (vidas < 0), limpamos a carta e interrompemos a troca
             this.clearDrawnCard();
             return;
         }
@@ -227,9 +210,7 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
         const newCard = gameState.currentDrawnCard;
         const oldCard = playerHand[index];
 
-        // ============================================
-        // ANIMAÇÃO "CORTANDO AO MEIO"
-        // ============================================
+
         const leftHalf = this.scene.add.image(sprite.x, sprite.y, oldCard.asset)
             .setScale(handScale)
             .setCrop(0, 0, 28, 79)
@@ -269,14 +250,9 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
             }
         });
 
-        // ============================================
-        // APLICAR NOVA CARTA
-        // ============================================
+
         playerHand[index] = newCard;
 
-        // ============================================
-        // MOSTRAR NO DESCARTE
-        // ============================================
         discardSprite.setTexture(oldCard.asset);
         discardSprite.setVisible(true);
         discardSprite.setScale(1.2);
@@ -288,26 +264,18 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
             yoyo: true
         });
 
-        // ============================================
-        // LIMPAR ESTADO
-        // ============================================
         this.clearDrawnCard();
         
-        // 🛑 CORREÇÃO/ADAPTAÇÃO: Chama o callback do MainScene para reativar o modo Pife
         if (this.onCardReplaced) this.onCardReplaced();
     }
 
-    // ============================================================
-    // DESCARTA CARTA NO SLOT VERMELHO (Com Perda de Vida)
-    // ============================================================
+
     discardCard(discardSprite) {
-        // 1. Checa se há carta para descarte
         if (!this.gameState.currentDrawnCard) {
             console.log("Nenhuma carta para descartar. Compre uma do deck primeiro.");
             return;
         }
 
-        // 🛑 Diminui a vida ao descartar carta diretamente.
         if (this.decreaseLife()) {
             this.clearDrawnCard(); 
             return; 
@@ -315,15 +283,11 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
 
         const card = this.gameState.currentDrawnCard;
 
-        // ============================================
-        // LÓGICA DE DESCARTE VISUAL (MANTIDA)
-        // ============================================
+
         
-        // Configura a carta comprada (currentDrawnCard) para ser o descarte visível
         discardSprite.setTexture(card.asset);
         discardSprite.setVisible(true);
 
-        // Animação de "pop" do descarte
         this.scene.tweens.add({
             targets: discardSprite,
             scale: 1.28,
@@ -331,20 +295,14 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
             yoyo: true
         });
 
-        // Finaliza o descarte da carta arrastada
         this.clearDrawnCard();
         
-        // 🛑 NOVO: Retorna ao modo de seleção Pife após o descarte, pois o turno termina
         if (this.onCardReplaced) this.onCardReplaced();
     }
 
-    // ============================================================
-    // LÓGICA DE FIM DE JOGO
-    // ============================================================
     handleGameOver() {
         console.log("GAME OVER! Sem mais descartes.");
 
-        // Desabilita interações relacionadas a cartas (evita arrastar)
         try {
             if (this.scene.handManager && Array.isArray(this.scene.handManager.handSprites)) {
                 this.scene.handManager.handSprites.forEach(s => {
@@ -353,10 +311,8 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
             }
         } catch (e) { /* ignore */ }
 
-        // Garante cursor padrão para permitir clicar em botões de UI
         try { this.scene.input.setDefaultCursor('default'); } catch (e) { /* ignore */ }
 
-        // Cria uma tela de Fim de Jogo (exemplo simples)
         const centerX = this.scene.scale.width / 2;
         const centerY = this.scene.scale.height / 2;
 
@@ -388,7 +344,6 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
             // Optional small feedback
             this.scene.tweens.add({ targets: btn, scale: 0.95, duration: 80, yoyo: true });
             try {
-                // Reset shared gameState values so restart begins with full life/zero coins
                 try {
                     if (this.gameState) {
                         this.gameState.currentLives = 3;
@@ -397,7 +352,6 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
                     }
                 } catch (e) { /* ignore */ }
 
-                // Restart the scene to reset decks/hands/UI
                 this.scene.scene.restart();
             } catch (e) {
                 console.error('Failed to restart scene for new game', e);
@@ -406,9 +360,6 @@ checkAndApplyPife(selectedCardsData, selectedSprites) {
     }
 
 
-    // ============================================================
-    // LIMPA CARTA COMPRADA
-    // ============================================================
     clearDrawnCard() {
         discardDrawnCard();
 

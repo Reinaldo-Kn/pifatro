@@ -35,14 +35,13 @@ export default class MainScene extends Phaser.Scene {
             "gui/GUI Assets/Gems for Status/Gem_Yellow.png"
         );
         this.lifeAssetMap.forEach((asset, index) => {
-            // Usamos a chave 'heart_0', 'heart_1', 'heart_2', 'heart_3' para referência fácil
+            // Usa a chave 'heart_0', 'heart_1', 'heart_2', 'heart_3' para referência
             this.load.image(`heart_${3 - index}`, `gui/GUI Assets/Status Bar Hearts/${asset}`);
         });
       
     }
 
 create() {
-        // Listen for authentication from LoginScene
         this.events.on('playerAuthenticated', async ({ guest } = {}) => {
             if (guest) {
                 console.log('Continuing as guest (no remote save).');
@@ -52,18 +51,17 @@ create() {
             try {
                 const saved = await pbClient.loadGameState();
                 if (saved) {
-                    // Apply saved state
+                    // Aplica o estado salvo
                     this.gameState.currentCoins = saved.coins ?? this.gameState.currentCoins;
                     this.gameState.currentLives = saved.lives ?? this.gameState.currentLives;
 
-                    // If saved hand exists, use it. Otherwise keep current hand.
+                    // Se a mão salva existir, use. Caso contrário, mantenha a mão atual.
                     if (Array.isArray(saved.hand) && saved.hand.length > 0) {
                         this.playerHand = saved.hand;
-                        // Re-render and update UI
                         if (this.handManager) this.handManager.render(this.playerHand);
                     }
 
-                    // Update UI elements
+                    // Atualiza elementos da UI
                     if (this.uiManager) this.uiManager.updateCoins(this.gameState.currentCoins);
                     if (this.lifeSprite) this.lifeSprite.setTexture(`heart_${this.gameState.currentLives}`);
 
@@ -74,17 +72,14 @@ create() {
             }
         });
 
-        // Launch LoginScene overlay only if there's no authenticated user
         try {
             const currentUser = pbClient.getCurrentUser ? pbClient.getCurrentUser() : null;
             if (!currentUser) this.scene.launch('LoginScene');
         } catch (e) {
-            // If pb not initialized or other error, launch login scene
+            // Se PocketBase não estiver inicializado ou outro erro, lança a cena de login
             try { this.scene.launch('LoginScene'); } catch (err) { /* ignore */ }
         }
 
-        // INICIALIZAR MANAGERS
-        // ============================================
         this.handManager = new HandManager(this);
         this.cardActions = new CardActions(this);
         this.uiManager = new UIManager(this);
@@ -119,7 +114,6 @@ create() {
 
       
         this.lifeSprite = this.uiManager.createLifeBar(this.gameState.currentLives);
-        // Ensure the life sprite texture matches currentLives (protect against load timing)
         try {
             const clamped = Math.max(0, Math.min(3, Number(this.gameState.currentLives) || 0));
             this.lifeSprite.setTexture(`heart_${clamped}`);
@@ -127,7 +121,6 @@ create() {
         } catch (e) {
             console.warn('Failed to initialize life sprite texture', e);
         }
-        // Create Save button in the UI and wire it to save the current game state
         try {
             this.uiManager.createSaveButton(async () => {
                 try {
@@ -148,7 +141,6 @@ create() {
                     console.warn('Save failed', err);
                         this.uiManager.showSaveFeedback('Save failed', false);
                         try {
-                            // show structured error in debug panel
                             const errText = typeof err === 'object' ? JSON.stringify(err, Object.getOwnPropertyNames(err), 2) : String(err);
                             if (this.uiManager) this.uiManager.showDebugPanel(errText);
                             console.error('Save error details:', err);
@@ -156,23 +148,17 @@ create() {
                 }
             });
         } catch (e) {
-            // ignore if UI manager not ready
         }
     }
 
-    // ============================================================
-    // COMPRA CARTA DO DECK
-    // ============================================================
+
     onDeckClick() {
         this.cardActions.drawCard(this.deck, () => {
-            // Quando a carta é comprada, mudamos para o modo 'clicar para substituir'
             this.enableHandClicks();
         });
     }
 
-    // ============================================================
-    // HABILITA CLIQUES PARA SUBSTITUIR CARTA
-    // ============================================================
+
     enableHandClicks() {
         this.handManager.enableClickToReplace(
             this.playerHand,
@@ -183,34 +169,24 @@ create() {
                     sprite,
                     this.discardSprite,
                     this.handManager.handScale,
-                    // 🛑 O callback aqui apenas chama o método que reativa a seleção Pife
                     () => this.onCardReplaced() 
                 );
             }
         );
     }
     
-    // ============================================================
-    // 🛑 NOVO CALLBACK: Chamado após uma carta ser substituída na mão
-    // ============================================================
+ 
     onCardReplaced() {
-        // 1. Re-renderiza a mão (necessário para limpar a carta que foi substituída)
         this.handManager.render(this.playerHand); 
-        // 2. Volta para o modo padrão: seleção de Pife (clicar/arrastar)
         this.handManager.enablePifeSelection(this.playerHand); 
     }
 
-    // ============================================================
-    // 🛑 NOVO CALLBACK: Chamado após uma combinação de Pife ser bem-sucedida
-    // ============================================================
+
 onPifeSuccess(cardsToRemove) {
-        // 1. Remove as cartas que formaram o pife da mão do jogador
-        // Filtramos a mão para manter apenas as cartas que NÃO estão no pife
         this.playerHand = this.playerHand.filter(handCard => 
             !cardsToRemove.some(removeCard => removeCard.id === handCard.id)
         );
 
-        // 2. Compra 3 novas cartas automaticamente
         const cardsToDraw = 3;
         for (let i = 0; i < cardsToDraw; i++) {
             if (this.deck.length > 0) {
@@ -218,27 +194,18 @@ onPifeSuccess(cardsToRemove) {
                 this.playerHand.push(newCard);
             } else {
                 console.log("Baralho acabou! Não é possível repor cartas.");
-                // Opcional: Implementar lógica de reembaralhar o descarte
             }
         }
 
-        // 3. Re-renderiza a mão com as novas cartas
-        // (Neste momento, as cartas aparecem instantaneamente em suas posições finais)
         this.handManager.render(this.playerHand);
 
-        // 4. Executa a animação de "voo" para as novas cartas entrarem
-        // Passamos o número de cartas novas para ele animar apenas as últimas 3
         this.handManager.animateCardsEntry(cardsToDraw);
 
-        // 5. Reativa a interatividade (seleção de pife)
         this.handManager.enablePifeSelection(this.playerHand);
         
         console.log(`Pife realizado! Mão atualizada. Restam ${this.deck.length} cartas no baralho.`);
     }
 
-    // ============================================================
-    // DESCARTA CARTA NO SLOT VERMELHO
-    // ============================================================
     onDiscardClick() {
         this.cardActions.discardCard(this.discardSprite);
     }

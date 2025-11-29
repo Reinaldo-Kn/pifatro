@@ -7,14 +7,12 @@ export default class LoginScene extends Phaser.Scene {
   }
 
   create() {
-    // ensure pb is initialized
+    // inicializa PocketBase se ainda não estiver
     try {
       pbClient.initPocketBase();
     } catch (e) {
-      // ignore if already initialized
     }
 
-    // create a simple HTML form overlay (appended to document.body)
     const existing = document.getElementById(this.containerId);
     if (existing) existing.remove();
 
@@ -58,7 +56,6 @@ export default class LoginScene extends Phaser.Scene {
       try {
         const data = err?.data || err?.response || null;
         if (data && data.data) {
-          // validation errors: data.data is an object
           return Object.entries(data.data).map(([k, v]) => `${k}: ${v.message || JSON.stringify(v)}`).join(' | ');
         }
         if (data && data.message) return data.message;
@@ -85,7 +82,7 @@ export default class LoginScene extends Phaser.Scene {
       msg.textContent = 'Signing up...';
       try {
         await pbClient.signUp(emailInput.value, passwordInput.value, passwordInput.value, emailInput.value.split('@')[0] || 'player');
-        // after signup, automatically login
+        // após o cadastro, faz login automaticamente
         await pbClient.loginWithEmail(emailInput.value, passwordInput.value);
         msg.textContent = 'Signed up and logged in';
         this.onAuthenticated();
@@ -97,7 +94,6 @@ export default class LoginScene extends Phaser.Scene {
     });
 
     guestBtn.addEventListener('click', () => {
-      // continue without auth
       this.onAuthenticated(true);
     });
   }
@@ -108,17 +104,14 @@ export default class LoginScene extends Phaser.Scene {
     if (container) container.remove();
     if (style) style.remove();
 
-    // notify MainScene (if exists)
     const main = this.scene.get('MainScene');
     if (main) {
       main.events.emit('playerAuthenticated', { guest });
     }
 
-    // stop this scene
     this.scene.stop();
   }
 
-  // ensure cleanup if scene is shutdown
   shutdown() {
     const container = document.getElementById(this.containerId);
     const style = document.getElementById(`${this.containerId}-style`);

@@ -9,7 +9,6 @@ export function applyCardHoverAnimation(scene, sprite, baseY, baseScale) {
   let isHovering = false;
 
   sprite.on("pointerover", () => {
-    // ⛔ se existe carta comprada, NÃO faz hover
     if (scene.gameState?.currentDrawnCard) return;
 
     if (isHovering) return;
@@ -27,7 +26,6 @@ export function applyCardHoverAnimation(scene, sprite, baseY, baseScale) {
   });
 
   sprite.on("pointerout", () => {
-    // ⛔ se tem carta comprada, garante que a carta fique normal
     if (scene.gameState?.currentDrawnCard) {
       sprite.setScale(baseScale);
       sprite.setY(baseY);
@@ -51,9 +49,6 @@ export function applyCardHoverAnimation(scene, sprite, baseY, baseScale) {
 }
 
 
-/* ------------------------------------------------------------------
-   💳 Flip Animation — vira a carta ao comprar do baralho
-   ------------------------------------------------------------------ */
 
 export function applyCardFlip(scene, sprite, newTexture) {
   if (!scene.textures.exists(newTexture)) {

@@ -22,7 +22,6 @@ export async function signUp(email, password, passwordConfirm, username) {
       username,
     });
   } catch (err) {
-    // Keep original error object so caller can inspect structured details
     console.error('PocketBase signUp error:', err);
     throw err;
   }
@@ -30,7 +29,6 @@ export async function signUp(email, password, passwordConfirm, username) {
 
 export async function loginWithEmail(email, password) {
   if (!pb) throw new Error('PocketBase not initialized.');
-  // Authenticates and fills pb.authStore automatically
   try {
     const authData = await pb.collection('users').authWithPassword(email, password);
     return authData;
@@ -50,8 +48,8 @@ export function getCurrentUser() {
   return pb.authStore.model || null;
 }
 
-// Save or update a single game_state record per user.
-// `state` should be an object: { lives: number, coins: number, hand: Array }
+
+// `state` deve ser um objeto: { lives: number, coins: number, hand: Array }
 export async function saveGameState(state) {
   if (!pb) throw new Error('PocketBase not initialized.');
   const user = getCurrentUser();
@@ -59,7 +57,7 @@ export async function saveGameState(state) {
 
   const collection = pb.collection('game_states');
 
-  // Try to find existing record for this user; fetch latest first
+  // Tenta encontrar registro existente para este usuário; busca o mais recente primeiro
   const existingPage = await collection.getList(1, 1, { filter: `user = "${user.id}"`, sort: '-created' }).catch(() => null);
   const existing = existingPage && existingPage.items ? existingPage.items : [];
 
@@ -67,13 +65,13 @@ export async function saveGameState(state) {
     user: [user.id],
     lives: state.lives ?? 0,
     coins: state.coins ?? 0,
-    // Store hand as JSON string to keep structure simple
+    // Armazena a mão como string JSON para manter a estrutura simples
     hand: JSON.stringify(state.hand ?? []),
     lastUpdated: new Date().toISOString(),
   };
 
   if (existing && existing.length > 0) {
-    const id = existing[0].id; // items already sorted by '-created'
+    const id = existing[0].id; 
     console.log('Updating existing game_state id=', id);
     return await collection.update(id, payload);
   } else {
@@ -88,7 +86,7 @@ export async function loadGameState() {
   if (!user) throw new Error('Not authenticated.');
 
   const collection = pb.collection('game_states');
-  // fetch latest record for this user
+  // busca o registro mais recente para este usuário
   const page = await collection.getList(1, 1, { filter: `user = "${user.id}"`, sort: '-created' }).catch(() => null);
   const items = page && page.items ? page.items : [];
   if (items && items.length > 0) {
